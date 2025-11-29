@@ -2162,31 +2162,11 @@ async def main():
 
 if __name__ == '__main__':
     try:
-        import os, sys, psutil
-        current_pid = os.getpid()
-        current_process = psutil.Process(current_pid)
-        process_name = current_process.name()
+        # Проверяем, что токен действительно пришёл из переменной окружения
+        if not TOKEN:
+            raise RuntimeError("TOKEN environment variable is not set")
 
-        count = 0
-        for process in psutil.process_iter(['pid', 'name']):
-            try:
-                if process.info['name'] == process_name and process.info['pid'] != current_pid:
-                    count += 1
-            except psutil.NoSuchProcess:
-                pass
-
-        if count > 0:
-            print(f"⚠️ Уже запущено {count} экземпляров бота. Текущий PID: {current_pid}")
-            sys.exit(0)
-
-        try:
-            import nest_asyncio
-            nest_asyncio.apply()
-            print("🔄 nest_asyncio применен")
-        except ImportError:
-            print("⚠️ nest_asyncio не установлен")
-
-        print(f"🚀 Запуск бота, PID: {current_pid}")
+        # Обычный запуск бота в асинхронном режиме
         asyncio.run(main())
 
     except Exception as e:
