@@ -1949,9 +1949,62 @@ async def restart(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
 
 
 async def handle_unexpected_text(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
+    """
+    Обработка текста там, где бот ожидает нажатия кнопок.
+
+    В режиме «Сколько стоит со скидкой»:
+    - если пользователь ввёл число (15, 15%, 15.5 и т.п.) — считаем, что это своя скидка
+      и сразу переходим к запросу цены;
+    - если ввёл что-то странное — мягко просим ввести нормальный процент.
+    В остальных режимах — старое поведение: просим пользоваться кнопками.
+    """
     lang = get_language(context)
-    await send_clean_message(update, context, LOCALIZATION[lang]['unexpected_text'])
+    current_action = context.user_data.get("текущее_действие")
+
+    # Пользователь находится в режиме "Сколько стоит со скидкой"
+    if current_action == "menu_shelf_discount" and update.message:
+        raw = (update.message.text or "").strip()
+
+        # Чистим ввод: убираем пробелы, запятые, знак процента
+        text = (
+            raw.replace(" ", "")
+               .replace(",", ".")
+               .replace("%", "")
+        )
+
+        # Если это похоже на число — пробуем интерпретировать как скидку
+        if text and all(c.isdigit() or c == "." for c in text):
+            try:
+                discount = float(text)
+            except ValueError:
+                await send_clean_message(update, context, LOCALIZATION[lang]["invalid_discount"])
+                return ВЫБОР_ТИПА_СКИДКИ
+
+            # Проверяем границы скидки
+            if discount <= 0 or discount >= 100:
+                await send_clean_message(update, context, LOCALIZATION[lang]["invalid_discount"])
+                return ВЫБОР_ТИПА_СКИДКИ
+
+            # Сохраняем скидку и сразу просим ввести цену
+            context.user_data["скидка"] = discount
+            context.user_data["попередній_стан"] = ОЖИДАНИЕ_СВОЕЙ_СКИДКИ
+
+            await send_clean_message(
+                update,
+                context,
+                LOCALIZATION[lang]["enter_price"],
+                reply_markup=None,
+            )
+            return ОЖИДАНИЕ_ЦЕНЫ
+
+        # Введён не процент — мягко просим ввести свою скидку числом
+        await send_clean_message(update, context, LOCALIZATION[lang]["enter_custom_discount"])
+        return ОЖИДАНИЕ_СВОЕЙ_СКИДКИ
+
+    # Для всех остальных разделов сохраняем старое поведение
+    await send_clean_message(update, context, LOCALIZATION[lang]["unexpected_text"])
     return ВЫБОР_ТИПА_СКИДКИ
+
 
 # ===== MAIN =====
 
@@ -2191,3 +2244,4 @@ if __name__ == '__main__':
 
     except Exception as e:
         logger.error(f"Критическая ошибка при запуске бота: {e}")
+
