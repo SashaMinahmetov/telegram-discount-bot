@@ -2162,17 +2162,11 @@ async def main():
 
 if __name__ == '__main__':
     try:
-        import os, sys, psutil
-        current_pid = os.getpid()
-        ...
-        try:
-            import nest_asyncio
-            nest_asyncio.apply()
-            print("🔄 nest_asyncio применен")
-        except ImportError:
-            print("⚠️ nest_asyncio не установлен")
+        # Проверяем, что токен действительно пришёл из переменной окружения
+        if not TOKEN:
+            raise RuntimeError("Переменная окружения TOKEN не установлена")
 
-        print(f"🚀 Запуск бота, PID: {current_pid}")
+        print("🚀 Запуск бота")
         asyncio.run(main())
 
     except Exception as e:
