@@ -2162,11 +2162,17 @@ async def main():
 
 if __name__ == '__main__':
     try:
-        # Проверяем, что токен действительно пришёл из переменной окружения
-        if not TOKEN:
-            raise RuntimeError("TOKEN environment variable is not set")
+        import os, sys, psutil
+        current_pid = os.getpid()
+        ...
+        try:
+            import nest_asyncio
+            nest_asyncio.apply()
+            print("🔄 nest_asyncio применен")
+        except ImportError:
+            print("⚠️ nest_asyncio не установлен")
 
-        # Обычный запуск бота в асинхронном режиме
+        print(f"🚀 Запуск бота, PID: {current_pid}")
         asyncio.run(main())
 
     except Exception as e:
