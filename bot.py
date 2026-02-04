@@ -56,10 +56,9 @@ from telegram.ext import (
 # Настройка логирования
 logging.basicConfig(
     format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
-    level=logging.INFO,
-    handlers=[
-        logging.FileHandler("bot.log"),
-        logging.StreamHandler()
+    level=logging.INFO
+)
+logger = logging.getLogger(__name__)
     ]
 )
 logger = logging.getLogger(__name__)
@@ -2244,4 +2243,5 @@ if __name__ == '__main__':
 
     except Exception as e:
         logger.error(f"Критическая ошибка при запуске бота: {e}")
+
 
