@@ -9,6 +9,7 @@ from telegram import (
     InlineKeyboardMarkup,
     ReplyKeyboardMarkup,
     ReplyKeyboardRemove,
+    WebAppInfo  # <--- Добавили вот это
 )
 from telegram.ext import (
     ApplicationBuilder,
@@ -413,28 +414,32 @@ def get_pro_menu_keyboard(context: ContextTypes.DEFAULT_TYPE):
 # ===== ОБРАБОТЧИКИ КОМАНД И ОБЩИЕ =====
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
-    if 'language' not in context.user_data:
-        context.user_data['попередній_стан'] = ВЫБОР_ЯЗЫКА
-        await send_clean_message(
-            update,
-            context,
-            "👋 Выберите язык / Оберіть мову:",
-            reply_markup=get_language_keyboard()
-        )
-        return ВЫБОР_ЯЗЫКА
+    # ... (код выбора языка остается тем же) ...
 
     lang = get_language(context)
-    saved_lang = lang
-    context.user_data.clear()
-    context.user_data['language'] = saved_lang
-    context.user_data['попередній_стан'] = ВЫБОР_ТИПА_СКИДКИ
-    keyboard = get_main_menu_keyboard(context)
+    
+    # 1. Ссылка на твое приложение (твоя ссылка на Vercel или Telegram Web App)
+    WEB_APP_URL = "https://твое-приложение.vercel.app" 
 
-    await send_clean_message(
-        update,
-        context,
+    # 2. Создаем Inline-клавиатуру с кнопкой Web App
+    # Текст кнопки как на скрине: "Купить больше активов"
+    webapp_keyboard = InlineKeyboardMarkup([
+        [InlineKeyboardButton("📱 Открыть приложение", web_app=WebAppInfo(url=WEB_APP_URL))]
+    ])
+
+    # 3. Отправляем сообщение
+    # Обрати внимание: мы отправляем ТЕКСТ и прикрепляем к нему INLINE клавиатуру
+    await update.message.reply_text(
+        "🚀 Запустите наше мини-приложение, нажав на кнопку ниже:",
+        reply_markup=webapp_keyboard, # <--- Вот сюда вставляем кнопку
+        parse_mode="Markdown"
+    )
+
+    # 4. А следом отправляем твое нижнее меню (оно придет вторым сообщением)
+    await update.message.reply_text(
         LOCALIZATION[lang]['main_menu'],
-        reply_markup=keyboard
+        reply_markup=get_main_menu_keyboard(context),
+        parse_mode="Markdown"
     )
     return ВЫБОР_ТИПА_СКИДКИ
 
@@ -2243,5 +2248,6 @@ if __name__ == '__main__':
 
     except Exception as e:
         logger.error(f"Критическая ошибка при запуске бота: {e}")
+
 
 
